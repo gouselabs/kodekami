@@ -1,0 +1,117 @@
+{
+  "name": "codekami",
+  "displayName": "CodeKami",
+  "description": "Turn your coding journey into an anime-inspired RPG. Offline, private, no backend.",
+  "version": "0.0.1",
+  "publisher": "gouselabs",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Other",
+    "Themes"
+  ],
+  "keywords": [
+    "anime",
+    "developer",
+    "gamification",
+    "rpg",
+    "productivity",
+    "coding",
+    "developer tools",
+    "anime theme",
+    "vs code"
+  ],
+  "activationEvents": [],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "codekami.openDashboard",
+        "title": "Open Dashboard",
+        "category": "CodeKami"
+      },
+      {
+        "command": "codekami.changeCharacter",
+        "title": "Change Character",
+        "category": "CodeKami"
+      },
+      {
+        "command": "codekami.viewAchievements",
+        "title": "View Achievements",
+        "category": "CodeKami"
+      },
+      {
+        "command": "codekami.generateDeveloperCard",
+        "title": "Generate Developer Card",
+        "category": "CodeKami"
+      },
+      {
+        "command": "codekami.resetProgress",
+        "title": "Reset Local Progress",
+        "category": "CodeKami"
+      }
+    ],
+    "themes": [
+      {
+        "label": "CodeKami Dark",
+        "uiTheme": "vs-dark",
+        "path": "./themes/codekami-dark-color-theme.json"
+      }
+    ],
+    "configuration": {
+      "title": "CodeKami",
+      "properties": {
+        "codekami.enableNotifications": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show notifications for level-ups, unlocked achievements, and streak milestones."
+        },
+        "codekami.sessionStartXp": {
+          "type": "number",
+          "default": 5,
+          "minimum": 0,
+          "description": "XP awarded once when a coding session starts."
+        },
+        "codekami.fileSaveXp": {
+          "type": "number",
+          "default": 2,
+          "minimum": 0,
+          "description": "XP awarded when a file is saved (subject to the cooldown below)."
+        },
+        "codekami.fileSaveCooldownSeconds": {
+          "type": "number",
+          "default": 60,
+          "minimum": 1,
+          "description": "Minimum seconds between file-save XP rewards, per file."
+        },
+        "codekami.debugMode": {
+          "type": "boolean",
+          "default": false,
+          "description": "Log CodeKami activity (XP, level-ups, achievements, streaks) to the 'CodeKami' output channel. No source code or file names are logged."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "npm run check-types && node esbuild.js",
+    "watch": "node esbuild.js --watch",
+    "check-types": "tsc --noEmit",
+    "package": "npm run check-types && npm run lint && node esbuild.js --production",
+    "lint": "eslint src --ext ts",
+    "pretest": "tsc -p tsconfig.json",
+    "test": "node --test \"out/test/**/*.test.js\"",
+    "vsix": "vsce package"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/vscode": "^1.85.0",
+    "@typescript-eslint/eslint-plugin": "^7.0.0",
+    "@typescript-eslint/parser": "^7.0.0",
+    "@vscode/vsce": "^2.24.0",
+    "esbuild": "^0.20.0",
+    "eslint": "^8.57.0",
+    "typescript": "^5.4.0"
+  }
+}
