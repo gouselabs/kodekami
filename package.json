@@ -4,6 +4,15 @@
   "description": "Turn your coding journey into an anime-inspired RPG. Offline, private, no backend.",
   "version": "0.0.1",
   "publisher": "gouselabs",
+  "icon": "icon.png",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/gouselabs/kodekami.git"
+  },
+  "bugs": {
+    "url": "https://github.com/gouselabs/kodekami/issues"
+  },
+  "homepage": "https://github.com/gouselabs/kodekami#readme",
   "engines": {
     "vscode": "^1.85.0"
   },
