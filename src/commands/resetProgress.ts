@@ -6,7 +6,8 @@ export async function resetProgress(storage: StorageService): Promise<boolean> {
 		'This will permanently delete your local CodeKami progress.',
 		{
 			modal: true,
-			detail: 'Your level, XP, streak, achievements, and character selection will all be reset. This cannot be undone.'
+			detail:
+				'Your level, XP, streak, achievements, character selection, and coding session history will all be reset. This cannot be undone.'
 		},
 		'Reset'
 	);
@@ -16,5 +17,8 @@ export async function resetProgress(storage: StorageService): Promise<boolean> {
 	}
 
 	await storage.resetProfile();
+	await storage.resetSessionHistory();
+	await storage.resetCompanionState();
+	await storage.resetThemeSelection();
 	return true;
 }

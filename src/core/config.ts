@@ -13,3 +13,5 @@ export const LEVEL_TITLES: ReadonlyArray<{ level: number; title: string }> = [
 ];
 
 export const STREAK_MILESTONES: ReadonlyArray<number> = [3, 7, 14, 30, 50, 100, 365];
+
+export const LONG_SESSION_MINUTES = 90;

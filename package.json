@@ -2,7 +2,7 @@
   "name": "codekami",
   "displayName": "CodeKami",
   "description": "Turn your coding journey into an anime-inspired RPG. Offline, private, no backend.",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "publisher": "gouselabs",
   "icon": "icon.png",
   "repository": {
@@ -61,6 +61,21 @@
         "command": "codekami.resetProgress",
         "title": "Reset Local Progress",
         "category": "CodeKami"
+      },
+      {
+        "command": "codekami.viewLastSession",
+        "title": "View Last Session",
+        "category": "CodeKami"
+      },
+      {
+        "command": "codekami.viewAnalytics",
+        "title": "View Analytics",
+        "category": "CodeKami"
+      },
+      {
+        "command": "codekami.changeTheme",
+        "title": "Change Theme",
+        "category": "CodeKami"
       }
     ],
     "themes": [
@@ -76,7 +91,7 @@
         "codekami.enableNotifications": {
           "type": "boolean",
           "default": true,
-          "description": "Show notifications for level-ups, unlocked achievements, and streak milestones."
+          "description": "Show notifications for streak milestones. Level-up and achievement reactions are controlled by the reaction settings below."
         },
         "codekami.sessionStartXp": {
           "type": "number",
@@ -96,10 +111,60 @@
           "minimum": 1,
           "description": "Minimum seconds between file-save XP rewards, per file."
         },
+        "codekami.showReactions": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show short anime-style reactions when you level up or unlock an achievement."
+        },
+        "codekami.reactionMode": {
+          "type": "string",
+          "enum": ["notification", "statusBar", "both"],
+          "default": "both",
+          "description": "How reactions are shown: a notification popup, a transient status bar message, or both."
+        },
+        "codekami.reactionCooldownSeconds": {
+          "type": "number",
+          "default": 45,
+          "minimum": 10,
+          "description": "Minimum seconds between normal reactions. Level-up and achievement reactions always bypass this cooldown."
+        },
+        "codekami.sessionInactivityMinutes": {
+          "type": "number",
+          "default": 30,
+          "minimum": 1,
+          "description": "Minutes of inactivity before a coding session is considered ended."
+        },
+        "codekami.showSessionSummary": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show a notification with a session summary when a coding session ends."
+        },
+        "codekami.showCompanion": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show your CodeKami companion in the status bar. It reacts to level-ups, achievements, builds, tests, commits, and long sessions."
+        },
+        "codekami.enableSounds": {
+          "type": "boolean",
+          "default": false,
+          "description": "Play short sound effects for level-ups, achievements, builds, tests, commits, sessions, and streak milestones. Off by default."
+        },
+        "codekami.soundVolume": {
+          "type": "number",
+          "default": 70,
+          "minimum": 0,
+          "maximum": 100,
+          "description": "Sound effect volume, as a percentage."
+        },
+        "codekami.showDailyMotivation": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show a short, original daily motivational message on the dashboard. The same message shows all day, chosen deterministically — no server or randomness involved."
+        },
         "codekami.debugMode": {
           "type": "boolean",
           "default": false,
-          "description": "Log CodeKami activity (XP, level-ups, achievements, streaks) to the 'CodeKami' output channel. No source code or file names are logged."
+          "description": "Log CodeKami activity (XP, level-ups, achievements, streaks, sessions) to the 'CodeKami' output channel. No source code or file names are logged."
         }
       }
     }

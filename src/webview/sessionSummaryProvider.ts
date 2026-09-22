@@ -1,14 +1,12 @@
 import * as vscode from 'vscode';
-import { CodeKamiProfile } from '../core/types';
-import { getTitleForLevel } from '../core/levelSystem';
-import { ACHIEVEMENTS } from '../core/achievementSystem';
-import { findCharacterClassByName } from '../character/characterService';
+import { CodingSession } from '../core/sessionTypes';
 import { escapeHtml } from '../utils/html';
+import { formatDuration } from '../utils/format';
 import type { StorageService } from '../storage/storageService';
 import { getCurrentTheme } from '../themes/ThemeService';
 import { themeStyleBlock } from '../themes/themeCss';
 
-export class DeveloperCardProvider {
+export class SessionSummaryProvider {
 	private panel: vscode.WebviewPanel | undefined;
 
 	constructor(
@@ -16,11 +14,11 @@ export class DeveloperCardProvider {
 		private readonly storage: StorageService
 	) {}
 
-	show(profile: CodeKamiProfile): void {
+	show(session: CodingSession, streak: number): void {
 		if (!this.panel) {
 			this.panel = vscode.window.createWebviewPanel(
-				'codekamiDeveloperCard',
-				'CodeKami Developer Card',
+				'codekamiSessionSummary',
+				'CodeKami Session Summary',
 				vscode.ViewColumn.One,
 				{
 					enableScripts: false,
@@ -33,17 +31,11 @@ export class DeveloperCardProvider {
 			});
 		}
 
-		this.panel.webview.html = this.render(profile);
+		this.panel.webview.html = this.render(session, streak);
 		this.panel.reveal();
 	}
 
-	private render(profile: CodeKamiProfile): string {
-		const title = getTitleForLevel(profile.level);
-		const name = profile.cardName ?? 'Anonymous Coder';
-		const characterClass = findCharacterClassByName(profile.characterClass);
-		const className = profile.characterClass ?? 'Unclassed';
-		const weapon = characterClass?.weapon ?? 'Bare Hands';
-		const achievementCount = profile.achievements.length;
+	private render(session: CodingSession, streak: number): string {
 		const theme = getCurrentTheme(this.storage);
 
 		return /* html */ `<!DOCTYPE html>
@@ -51,7 +43,7 @@ export class DeveloperCardProvider {
 <head>
 	<meta charset="UTF-8" />
 	<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline';" />
-	<title>CodeKami Developer Card</title>
+	<title>CodeKami Session Summary</title>
 	<style>
 		:root {
 			color-scheme: dark;
@@ -64,7 +56,7 @@ export class DeveloperCardProvider {
 			padding: 32px;
 		}
 		.card {
-			max-width: 360px;
+			max-width: 380px;
 			margin: 0 auto;
 			border: 1px solid var(--ck-border, var(--vscode-widget-border, #333));
 			border-radius: 14px;
@@ -72,21 +64,11 @@ export class DeveloperCardProvider {
 			background: var(--ck-surface, var(--vscode-sideBar-background, #1e1e1e));
 			text-align: center;
 		}
-		.rank {
+		.title {
 			font-size: 13px;
 			letter-spacing: 3px;
 			opacity: 0.7;
 			text-transform: uppercase;
-			margin-bottom: 8px;
-		}
-		.name {
-			font-size: 26px;
-			font-weight: 700;
-			margin-bottom: 4px;
-		}
-		.level {
-			font-size: 13px;
-			opacity: 0.7;
 			margin-bottom: 20px;
 		}
 		.row {
@@ -105,12 +87,16 @@ export class DeveloperCardProvider {
 			color: var(--ck-primary, var(--vscode-textLink-foreground, #4fc3f7));
 			font-weight: 600;
 		}
-		.stats {
+		.xp {
 			margin-top: 16px;
-			font-size: 12px;
+			font-size: 20px;
+			font-weight: 700;
+			color: var(--ck-primary, var(--vscode-textLink-foreground, #4fc3f7));
+		}
+		.streak {
+			margin-top: 8px;
+			font-size: 13px;
 			opacity: 0.85;
-			display: flex;
-			justify-content: space-around;
 		}
 		.footer {
 			margin-top: 20px;
@@ -118,30 +104,20 @@ export class DeveloperCardProvider {
 			letter-spacing: 2px;
 			opacity: 0.5;
 		}
-		.hint {
-			max-width: 360px;
-			margin: 14px auto 0;
-			font-size: 12px;
-			opacity: 0.6;
-			text-align: center;
-		}
 	</style>
 </head>
 <body>
 	<div class="card">
-		<div class="rank">${escapeHtml(title)}</div>
-		<div class="name">${escapeHtml(name)}</div>
-		<div class="level">Level ${profile.level}</div>
-		<div class="row"><span class="label">Class</span><span class="value">${escapeHtml(className)}</span></div>
-		<div class="row"><span class="label">Weapon</span><span class="value">${escapeHtml(weapon)}</span></div>
-		<div class="stats">
-			<span>🔥 ${profile.streak} Day Streak</span>
-			<span>🏆 ${achievementCount} / ${ACHIEVEMENTS.length}</span>
-			<span>✨ ${profile.totalXp} XP</span>
-		</div>
+		<div class="title">⚔ Session Complete</div>
+		<div class="row"><span class="label">Duration</span><span class="value">${escapeHtml(formatDuration(session.durationMinutes))}</span></div>
+		<div class="row"><span class="label">Files touched</span><span class="value">${session.filesTouched}</span></div>
+		<div class="row"><span class="label">Builds</span><span class="value">${session.successfulBuilds} / ${session.buildAttempts}</span></div>
+		<div class="row"><span class="label">Tests</span><span class="value">${session.successfulTests} / ${session.testRuns}</span></div>
+		<div class="row"><span class="label">Commits</span><span class="value">${session.commits}</span></div>
+		<div class="xp">+${session.xpEarned} XP</div>
+		<div class="streak">🔥 ${streak} Day Streak</div>
 		<div class="footer">CODEKAMI</div>
 	</div>
-	<div class="hint">Copied as plain text to your clipboard — paste it anywhere to share.</div>
 </body>
 </html>`;
 	}

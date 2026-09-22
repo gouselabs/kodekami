@@ -3,6 +3,11 @@ import { StorageService } from '../storage/storageService';
 import { getTitleForLevel, xpRequiredForLevel } from '../core/levelSystem';
 import { ACHIEVEMENTS } from '../core/achievementSystem';
 import { escapeHtml } from '../utils/html';
+import { findCompanionType } from '../companion/companions';
+import { getCurrentTheme } from '../themes/ThemeService';
+import { themeStyleBlock } from '../themes/themeCss';
+import { getDailyMessage } from '../content/DailyContentService';
+import { getSettings } from '../utils/settings';
 
 export class DashboardProvider {
 	private panel: vscode.WebviewPanel | undefined;
@@ -49,6 +54,10 @@ export class DashboardProvider {
 		const xpNeeded = xpRequiredForLevel(profile.level);
 		const xpPercent = Math.min(100, Math.round((profile.xp / xpNeeded) * 100));
 		const achievementCount = profile.achievements.length;
+		const companionState = this.storage.getCompanionState();
+		const companion = findCompanionType(companionState.selectedCompanionId);
+		const theme = getCurrentTheme(this.storage);
+		const dailyMessage = getSettings().showDailyMotivation ? getDailyMessage() : undefined;
 
 		return /* html */ `<!DOCTYPE html>
 <html lang="en">
@@ -60,19 +69,20 @@ export class DashboardProvider {
 		:root {
 			color-scheme: dark;
 		}
+		${themeStyleBlock(theme)}
 		body {
 			font-family: var(--vscode-font-family);
-			color: var(--vscode-foreground);
-			background-color: var(--vscode-editor-background);
+			color: var(--ck-text, var(--vscode-foreground));
+			background-color: var(--ck-background, var(--vscode-editor-background));
 			padding: 32px;
 		}
 		.card {
 			max-width: 420px;
 			margin: 0 auto;
-			border: 1px solid var(--vscode-widget-border, #333);
+			border: 1px solid var(--ck-border, var(--vscode-widget-border, #333));
 			border-radius: 10px;
 			padding: 24px;
-			background: var(--vscode-sideBar-background, #1e1e1e);
+			background: var(--ck-surface, var(--vscode-sideBar-background, #1e1e1e));
 		}
 		.title {
 			font-size: 13px;
@@ -83,7 +93,7 @@ export class DashboardProvider {
 		}
 		.class {
 			font-size: 14px;
-			color: var(--vscode-textLink-foreground, #4fc3f7);
+			color: var(--ck-primary, var(--vscode-textLink-foreground, #4fc3f7));
 			margin-bottom: 4px;
 		}
 		.level {
@@ -102,7 +112,7 @@ export class DashboardProvider {
 		.bar-fill {
 			height: 100%;
 			width: ${xpPercent}%;
-			background: var(--vscode-textLink-foreground, #4fc3f7);
+			background: var(--ck-primary, var(--vscode-textLink-foreground, #4fc3f7));
 		}
 		.xp-label {
 			font-size: 12px;
@@ -117,6 +127,34 @@ export class DashboardProvider {
 		.achievements {
 			font-size: 13px;
 			opacity: 0.85;
+			margin-bottom: 4px;
+		}
+		.companion {
+			font-size: 13px;
+			opacity: 0.85;
+		}
+		.motivation {
+			margin-top: 18px;
+			padding-top: 16px;
+			border-top: 1px solid var(--ck-border, var(--vscode-widget-border, #333));
+		}
+		.motivation-title {
+			font-size: 11px;
+			letter-spacing: 2px;
+			opacity: 0.6;
+			text-transform: uppercase;
+			margin-bottom: 8px;
+		}
+		.motivation-text {
+			font-size: 13px;
+			font-style: italic;
+			line-height: 1.5;
+		}
+		.motivation-signature {
+			margin-top: 6px;
+			font-size: 11px;
+			opacity: 0.5;
+			text-align: right;
 		}
 	</style>
 </head>
@@ -129,6 +167,17 @@ export class DashboardProvider {
 		<div class="xp-label">${profile.xp} / ${xpNeeded} XP (Total: ${profile.totalXp})</div>
 		<div class="streak">🔥 ${profile.streak} Day Streak</div>
 		<div class="achievements">🏆 ${achievementCount} / ${ACHIEVEMENTS.length} Achievements</div>
+		${companion ? `<div class="companion">${companion.emoji} ${escapeHtml(companion.name)}</div>` : ''}
+		<div class="companion">🎨 ${escapeHtml(theme.name)}</div>
+		${
+			dailyMessage
+				? `<div class="motivation">
+			<div class="motivation-title">⚔ Daily Motivation</div>
+			<div class="motivation-text">"${escapeHtml(dailyMessage.text)}"</div>
+			<div class="motivation-signature">— CodeKami</div>
+		</div>`
+				: ''
+		}
 	</div>
 </body>
 </html>`;
