@@ -18,6 +18,7 @@ function makeSession(overrides: Partial<CodingSession> = {}): CodingSession {
 		successfulTests: 0,
 		failedTests: 0,
 		commits: 0,
+		recoveries: 0,
 		xpEarned: 0,
 		completed: true,
 		...overrides

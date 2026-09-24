@@ -8,6 +8,7 @@ import { getCurrentTheme } from '../themes/ThemeService';
 import { themeStyleBlock } from '../themes/themeCss';
 import { getDailyMessage } from '../content/DailyContentService';
 import { getSettings } from '../utils/settings';
+import { getTodaysQuestViews } from '../core/questProgress';
 
 export class DashboardProvider {
 	private panel: vscode.WebviewPanel | undefined;
@@ -58,6 +59,7 @@ export class DashboardProvider {
 		const companion = findCompanionType(companionState.selectedCompanionId);
 		const theme = getCurrentTheme(this.storage);
 		const dailyMessage = getSettings().showDailyMotivation ? getDailyMessage() : undefined;
+		const questViews = getTodaysQuestViews(this.storage.getQuestState());
 
 		return /* html */ `<!DOCTYPE html>
 <html lang="en">
@@ -133,6 +135,31 @@ export class DashboardProvider {
 			font-size: 13px;
 			opacity: 0.85;
 		}
+		.quests {
+			margin-top: 18px;
+			padding-top: 16px;
+			border-top: 1px solid var(--ck-border, var(--vscode-widget-border, #333));
+		}
+		.quests-title {
+			font-size: 11px;
+			letter-spacing: 2px;
+			opacity: 0.6;
+			text-transform: uppercase;
+			margin-bottom: 8px;
+		}
+		.quest-row {
+			font-size: 13px;
+			padding: 3px 0;
+			opacity: 0.9;
+		}
+		.quest-row.completed {
+			opacity: 0.55;
+			text-decoration: line-through;
+		}
+		.quest-manual-note {
+			opacity: 0.6;
+			font-size: 11px;
+		}
 		.motivation {
 			margin-top: 18px;
 			padding-top: 16px;
@@ -169,6 +196,18 @@ export class DashboardProvider {
 		<div class="achievements">🏆 ${achievementCount} / ${ACHIEVEMENTS.length} Achievements</div>
 		${companion ? `<div class="companion">${companion.emoji} ${escapeHtml(companion.name)}</div>` : ''}
 		<div class="companion">🎨 ${escapeHtml(theme.name)}</div>
+		<div class="quests">
+			<div class="quests-title">📋 Today's Quests</div>
+			${questViews
+				.map((view) => {
+					const manualNote =
+						view.quest.kind === 'manual' && !view.completed
+							? ` <span class="quest-manual-note">— mark via "CodeKami: Complete Quest"</span>`
+							: '';
+					return `<div class="quest-row${view.completed ? ' completed' : ''}">${view.completed ? '✅' : '⬜'} ${view.quest.icon} ${escapeHtml(view.quest.name)}${manualNote}</div>`;
+				})
+				.join('')}
+		</div>
 		${
 			dailyMessage
 				? `<div class="motivation">

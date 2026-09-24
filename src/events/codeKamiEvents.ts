@@ -3,6 +3,7 @@ import type { GrantXpResult } from '../core/xpSystem';
 import type { AchievementContext, AchievementDefinition } from '../core/achievementSystem';
 import type { CodingSession } from '../core/sessionTypes';
 import type { TaskKind } from '../tracking/taskClassifier';
+import type { FocusSession } from '../focus/FocusTimer';
 
 export type CodeKamiEvent =
 	| { type: 'xpGranted'; result: GrantXpResult; context: AchievementContext }
@@ -12,7 +13,10 @@ export type CodeKamiEvent =
 	| { type: 'sessionEnded'; session: CodingSession }
 	| { type: 'sessionStarted'; isReturn: boolean }
 	| { type: 'taskCompleted'; kind: TaskKind; success: boolean }
-	| { type: 'commit' };
+	| { type: 'commit' }
+	| { type: 'focusStarted'; targetDurationMinutes: number; bossId?: string }
+	| { type: 'focusCompleted'; session: FocusSession }
+	| { type: 'focusCancelled'; session: FocusSession };
 
 class CodeKamiEventEmitter implements vscode.Disposable {
 	private readonly emitter = new vscode.EventEmitter<CodeKamiEvent>();

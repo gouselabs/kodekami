@@ -44,6 +44,10 @@ export function deriveMoodFromEvent(event: CodeKamiEvent): CompanionMood | undef
 			return 'levelUp';
 		case 'achievementUnlocked':
 			return 'achievement';
+		case 'streakMilestone':
+			return 'achievement';
+		case 'commit':
+			return 'coding';
 		case 'taskCompleted':
 			if (event.kind === 'build') {
 				return event.success ? 'buildSuccess' : 'buildFailure';
@@ -56,6 +60,10 @@ export function deriveMoodFromEvent(event: CodeKamiEvent): CompanionMood | undef
 			return event.session.durationMinutes >= LONG_SESSION_MINUTES ? 'longSession' : undefined;
 		case 'sessionStarted':
 			return event.isReturn ? 'comeback' : undefined;
+		case 'focusStarted':
+			return 'focusMode';
+		case 'focusCompleted':
+			return 'achievement';
 		default:
 			return undefined;
 	}

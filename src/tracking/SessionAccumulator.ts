@@ -17,6 +17,9 @@ export class SessionAccumulator {
 	private successfulTests = 0;
 	private failedTests = 0;
 	private commits = 0;
+	private recoveries = 0;
+	private lastBuildWasFailure = false;
+	private lastTestWasFailure = false;
 	private xpEarned = 0;
 
 	constructor(startedAt: number) {
@@ -31,8 +34,13 @@ export class SessionAccumulator {
 		this.buildAttempts += 1;
 		if (success) {
 			this.successfulBuilds += 1;
+			if (this.lastBuildWasFailure) {
+				this.recoveries += 1;
+			}
+			this.lastBuildWasFailure = false;
 		} else {
 			this.failedBuilds += 1;
+			this.lastBuildWasFailure = true;
 		}
 	}
 
@@ -40,8 +48,13 @@ export class SessionAccumulator {
 		this.testRuns += 1;
 		if (success) {
 			this.successfulTests += 1;
+			if (this.lastTestWasFailure) {
+				this.recoveries += 1;
+			}
+			this.lastTestWasFailure = false;
 		} else {
 			this.failedTests += 1;
+			this.lastTestWasFailure = true;
 		}
 	}
 
@@ -51,6 +64,15 @@ export class SessionAccumulator {
 
 	addXp(amount: number): void {
 		this.xpEarned += amount;
+	}
+
+	getInProgressCounts(): { successfulBuilds: number; successfulTests: number; commits: number; recoveries: number } {
+		return {
+			successfulBuilds: this.successfulBuilds,
+			successfulTests: this.successfulTests,
+			commits: this.commits,
+			recoveries: this.recoveries
+		};
 	}
 
 	finalize(endedAt: number): CodingSession {
@@ -67,6 +89,7 @@ export class SessionAccumulator {
 			successfulTests: this.successfulTests,
 			failedTests: this.failedTests,
 			commits: this.commits,
+			recoveries: this.recoveries,
 			xpEarned: this.xpEarned,
 			completed: true
 		};

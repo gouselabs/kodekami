@@ -12,6 +12,7 @@ export function foldIntoAggregate(aggregate: HistoricalAggregate, session: Codin
 		totalSuccessfulTests: aggregate.totalSuccessfulTests + session.successfulTests,
 		totalFailedTests: aggregate.totalFailedTests + session.failedTests,
 		totalCommits: aggregate.totalCommits + session.commits,
+		totalRecoveries: aggregate.totalRecoveries + session.recoveries,
 		totalXpEarned: aggregate.totalXpEarned + session.xpEarned
 	};
 }
@@ -28,4 +29,33 @@ export function appendSession(history: SessionHistoryStorage, session: CodingSes
 	}
 
 	return { ...history, sessions, historicalAggregate: aggregate };
+}
+
+export interface AllTimeSessionTotals {
+	totalCommits: number;
+	totalSuccessfulBuilds: number;
+	totalSuccessfulTests: number;
+	totalRecoveries: number;
+}
+
+/**
+ * All-time totals across every session ever recorded, including sessions
+ * already folded into the historical aggregate (older than the 500-session
+ * cap). Used for achievement conditions like "50 commits" that need to look
+ * further back than the currently-stored session list.
+ */
+export function computeAllTimeSessionTotals(history: SessionHistoryStorage): AllTimeSessionTotals {
+	let totalCommits = history.historicalAggregate.totalCommits;
+	let totalSuccessfulBuilds = history.historicalAggregate.totalSuccessfulBuilds;
+	let totalSuccessfulTests = history.historicalAggregate.totalSuccessfulTests;
+	let totalRecoveries = history.historicalAggregate.totalRecoveries;
+
+	for (const session of history.sessions) {
+		totalCommits += session.commits;
+		totalSuccessfulBuilds += session.successfulBuilds;
+		totalSuccessfulTests += session.successfulTests;
+		totalRecoveries += session.recoveries;
+	}
+
+	return { totalCommits, totalSuccessfulBuilds, totalSuccessfulTests, totalRecoveries };
 }

@@ -35,8 +35,8 @@ export class CompanionService implements vscode.Disposable {
 			return;
 		}
 		const companion = this.getCompanion();
-		this.statusBarItem.text = getMoodEmoji(this.mood);
-		this.statusBarItem.tooltip = `CodeKami Companion: ${companion.name} — click to open the dashboard`;
+		this.statusBarItem.text = this.mood === 'idle' ? companion.emoji : getMoodEmoji(this.mood);
+		this.statusBarItem.tooltip = `CodeKami Companion: ${companion.name} (${this.mood}) — click to open the dashboard`;
 		this.statusBarItem.show();
 	}
 

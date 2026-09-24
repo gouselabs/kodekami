@@ -19,6 +19,7 @@ export interface DailyActivity {
 }
 
 export interface AnalyticsSnapshot {
+	today: PeriodStatistics;
 	weekly: PeriodStatistics;
 	monthly: PeriodStatistics;
 	dailyActivity: DailyActivity[];

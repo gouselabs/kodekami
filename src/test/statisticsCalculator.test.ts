@@ -1,6 +1,6 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
-import { calculateDailyActivity, calculatePeriodStatistics } from '../analytics/StatisticsCalculator';
+import { calculateDailyActivity, calculatePeriodStatistics, startOfLocalDay } from '../analytics/StatisticsCalculator';
 import type { CodingSession } from '../core/sessionTypes';
 import type { AchievementState } from '../core/types';
 
@@ -18,6 +18,7 @@ function makeSession(overrides: Partial<CodingSession> = {}): CodingSession {
 		successfulTests: 3,
 		failedTests: 1,
 		commits: 1,
+		recoveries: 0,
 		xpEarned: 20,
 		completed: true,
 		...overrides
@@ -108,5 +109,27 @@ describe('calculateDailyActivity', () => {
 		const buckets = calculateDailyActivity(sessions, 3, now);
 
 		assert.ok(buckets.every((b) => b.codingMinutes === 0));
+	});
+});
+
+describe('startOfLocalDay', () => {
+	test('returns midnight local time for the given date', () => {
+		const start = startOfLocalDay(new Date(2026, 0, 15, 18, 30, 0));
+		const expected = new Date(2026, 0, 15, 0, 0, 0, 0).getTime();
+		assert.equal(start, expected);
+	});
+
+	test('"today" statistics only include sessions ending after local midnight', () => {
+		const now = new Date(2026, 0, 15, 14, 0, 0);
+		const since = startOfLocalDay(now);
+
+		const sessions = [
+			makeSession({ endedAt: new Date(2026, 0, 15, 1, 0, 0).getTime(), xpEarned: 5 }), // today, early morning
+			makeSession({ endedAt: new Date(2026, 0, 14, 23, 0, 0).getTime(), xpEarned: 50 }) // yesterday, late night
+		];
+
+		const stats = calculatePeriodStatistics(sessions, [], since, now.getTime());
+		assert.equal(stats.sessions, 1);
+		assert.equal(stats.xpEarned, 5);
 	});
 });

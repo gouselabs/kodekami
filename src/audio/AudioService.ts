@@ -7,14 +7,74 @@ import { getSettings } from '../utils/settings';
 import { log } from '../utils/logger';
 
 const SOUNDS_DIR = 'sounds';
+export const AUDIO_VIEW_ID = 'codekami.audioView';
 
-export class AudioService implements vscode.Disposable {
+interface PendingPlay {
+	fileUri: vscode.Uri;
+	volume: number;
+}
+
+interface WebviewMessage {
+	command?: string;
+	message?: string;
+}
+
+/**
+ * Plays short sound effects via a persistent WebviewView in the Panel area
+ * (alongside Terminal/Output), rather than a closeable editor tab. Unlike an
+ * editor tab — which is fully destroyed when closed, requiring a fresh
+ * browser-gesture unlock every time — a WebviewView survives normal
+ * hide/show (switching panel tabs, collapsing the panel) and is only torn
+ * down by a deliberate "right-click → uncheck", so the one-time click needed
+ * to satisfy the browser's autoplay policy only has to happen once per VS
+ * Code session, not once per sound.
+ */
+export class AudioService implements vscode.Disposable, vscode.WebviewViewProvider {
 	private readonly cooldown = new ReactionCooldown();
 	private readonly subscription: vscode.Disposable;
-	private panel: vscode.WebviewPanel | undefined;
+	private view: vscode.WebviewView | undefined;
+	private viewReady = false;
+	private audioUnlocked = false;
+	private hasShownUnlockHint = false;
+	private readonly pendingQueue: PendingPlay[] = [];
+	private messageSubscription: vscode.Disposable | undefined;
+	private disposeSubscription: vscode.Disposable | undefined;
 
 	constructor(private readonly extensionUri: vscode.Uri) {
 		this.subscription = codeKamiEvents.onEvent((event) => this.handleEvent(event));
+	}
+
+	resolveWebviewView(webviewView: vscode.WebviewView): void {
+		this.view = webviewView;
+		this.viewReady = false;
+		this.audioUnlocked = false;
+
+		webviewView.webview.options = {
+			enableScripts: true,
+			localResourceRoots: [vscode.Uri.joinPath(this.extensionUri, SOUNDS_DIR)]
+		};
+		webviewView.webview.html = this.render(webviewView.webview);
+
+		this.messageSubscription?.dispose();
+		this.messageSubscription = webviewView.webview.onDidReceiveMessage((message: WebviewMessage) => {
+			if (message?.command === 'ready') {
+				this.viewReady = true;
+				this.flushQueue();
+			} else if (message?.command === 'unlocked') {
+				this.audioUnlocked = true;
+			} else if (message?.command === 'playError') {
+				log(`Sound playback failed: ${message.message ?? 'unknown error'}`);
+			}
+		});
+
+		this.disposeSubscription?.dispose();
+		this.disposeSubscription = webviewView.onDidDispose(() => {
+			this.view = undefined;
+			this.viewReady = false;
+			this.audioUnlocked = false;
+			this.messageSubscription?.dispose();
+			this.messageSubscription = undefined;
+		});
 	}
 
 	private handleEvent(event: CodeKamiEvent): void {
@@ -31,6 +91,7 @@ export class AudioService implements vscode.Disposable {
 		if (!bypassesSoundCooldown(soundEvent)) {
 			const now = Date.now();
 			if (!this.cooldown.canShow(now, settings.soundCooldownMs)) {
+				log(`Sound skipped (cooldown active): ${soundEvent}`);
 				return;
 			}
 			this.cooldown.markShown(now);
@@ -50,32 +111,57 @@ export class AudioService implements vscode.Disposable {
 			return;
 		}
 
-		const panel = this.ensurePanel();
-		const webviewUri = panel.webview.asWebviewUri(fileUri).toString();
 		const volume = Math.max(0, Math.min(1, volumePercent / 100));
-		void panel.webview.postMessage({ command: 'play', uri: webviewUri, volume });
+		this.enqueuePlay({ fileUri, volume });
+
+		if (!this.audioUnlocked) {
+			this.promptEnable();
+		}
 	}
 
-	private ensurePanel(): vscode.WebviewPanel {
-		if (this.panel) {
-			return this.panel;
+	private promptEnable(): void {
+		if (this.hasShownUnlockHint) {
+			return;
 		}
+		this.hasShownUnlockHint = true;
+		void vscode.window
+			.showInformationMessage(
+				'🔊 CodeKami wants to play a sound. Click the "CodeKami" panel (bottom panel, next to Terminal) once to allow it — a one-time browser requirement. It stays enabled for the rest of this VS Code session, even if you switch away from that panel.',
+				'Show Panel'
+			)
+			.then((selection) => {
+				if (selection === 'Show Panel') {
+					void vscode.commands.executeCommand(`${AUDIO_VIEW_ID}.focus`);
+				}
+			});
+	}
 
-		this.panel = vscode.window.createWebviewPanel(
-			'codekamiAudio',
-			'CodeKami Audio',
-			{ viewColumn: vscode.ViewColumn.Beside, preserveFocus: true },
-			{
-				enableScripts: true,
-				localResourceRoots: [vscode.Uri.joinPath(this.extensionUri, SOUNDS_DIR)]
+	private enqueuePlay(pending: PendingPlay): void {
+		if (this.viewReady && this.view) {
+			this.postPlay(this.view, pending);
+			return;
+		}
+		// Either the view has never been shown yet (user hasn't opened the
+		// CodeKami panel) or its script hasn't finished loading — queue it and
+		// flush once the view exists and signals it's ready.
+		this.pendingQueue.push(pending);
+	}
+
+	private flushQueue(): void {
+		if (!this.view) {
+			return;
+		}
+		while (this.pendingQueue.length > 0) {
+			const pending = this.pendingQueue.shift();
+			if (pending) {
+				this.postPlay(this.view, pending);
 			}
-		);
-		this.panel.webview.html = this.render(this.panel.webview);
-		this.panel.onDidDispose(() => {
-			this.panel = undefined;
-		});
+		}
+	}
 
-		return this.panel;
+	private postPlay(view: vscode.WebviewView, pending: PendingPlay): void {
+		const uri = view.webview.asWebviewUri(pending.fileUri).toString();
+		void view.webview.postMessage({ command: 'play', uri, volume: pending.volume });
 	}
 
 	private render(webview: vscode.Webview): string {
@@ -83,25 +169,71 @@ export class AudioService implements vscode.Disposable {
 <html lang="en">
 <head>
 	<meta charset="UTF-8" />
-	<meta http-equiv="Content-Security-Policy" content="default-src 'none'; media-src ${webview.cspSource}; script-src 'unsafe-inline';" />
+	<meta http-equiv="Content-Security-Policy" content="default-src 'none'; media-src ${webview.cspSource}; script-src 'unsafe-inline'; style-src 'unsafe-inline';" />
 	<style>
-		body { background: transparent; color: var(--vscode-descriptionForeground); font-family: var(--vscode-font-family); padding: 16px; }
+		body {
+			background: transparent;
+			color: var(--vscode-foreground);
+			font-family: var(--vscode-font-family);
+			font-size: 12px;
+			padding: 12px;
+			cursor: pointer;
+			user-select: none;
+		}
+		#hint {
+			padding: 10px;
+			border: 1px dashed var(--vscode-widget-border, #555);
+			border-radius: 6px;
+			line-height: 1.5;
+		}
 	</style>
 </head>
 <body>
-	<p>CodeKami plays short sound effects here. You can leave this tab open in the background — closing it just pauses sound until the next event.</p>
+	<p id="hint">🔇 Click anywhere here once to enable CodeKami sound effects for this VS Code session.</p>
 	<audio id="player"></audio>
 	<script>
+		const vscode = acquireVsCodeApi();
 		const player = document.getElementById('player');
+		const hint = document.getElementById('hint');
+		let unlocked = false;
+		let pending = null;
+
+		function playNow(uri, volume) {
+			player.src = uri;
+			player.volume = volume;
+			player.currentTime = 0;
+			player.play().catch((error) => {
+				vscode.postMessage({ command: 'playError', message: String(error) });
+			});
+		}
+
+		function unlock() {
+			if (unlocked) {
+				return;
+			}
+			unlocked = true;
+			hint.textContent = '🔊 Sound effects enabled for this session.';
+			vscode.postMessage({ command: 'unlocked' });
+			if (pending) {
+				playNow(pending.uri, pending.volume);
+				pending = null;
+			}
+		}
+
+		document.body.addEventListener('click', unlock);
+
 		window.addEventListener('message', (event) => {
 			const { command, uri, volume } = event.data;
 			if (command === 'play') {
-				player.src = uri;
-				player.volume = volume;
-				player.currentTime = 0;
-				player.play().catch(() => {});
+				if (unlocked) {
+					playNow(uri, volume);
+				} else {
+					pending = { uri, volume };
+				}
 			}
 		});
+
+		vscode.postMessage({ command: 'ready' });
 	</script>
 </body>
 </html>`;
@@ -109,6 +241,7 @@ export class AudioService implements vscode.Disposable {
 
 	dispose(): void {
 		this.subscription.dispose();
-		this.panel?.dispose();
+		this.messageSubscription?.dispose();
+		this.disposeSubscription?.dispose();
 	}
 }

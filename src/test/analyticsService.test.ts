@@ -24,9 +24,61 @@ describe('buildAnalyticsSnapshot', () => {
 		const storage = new StorageService(createFakeContext());
 		const snapshot = buildAnalyticsSnapshot(storage, Date.now());
 
+		assert.equal(snapshot.today.sessions, 0);
 		assert.equal(snapshot.weekly.sessions, 0);
 		assert.equal(snapshot.monthly.sessions, 0);
 		assert.equal(snapshot.dailyActivity.length, 14);
+	});
+
+	test('includes a session from earlier today in "today" stats', async () => {
+		const storage = new StorageService(createFakeContext());
+		const now = new Date(2026, 0, 15, 18, 0, 0).getTime();
+		await storage.appendSession({
+			id: 's1',
+			startedAt: new Date(2026, 0, 15, 9, 0, 0).getTime(),
+			endedAt: new Date(2026, 0, 15, 9, 30, 0).getTime(),
+			durationMinutes: 30,
+			filesTouched: 1,
+			buildAttempts: 0,
+			successfulBuilds: 0,
+			failedBuilds: 0,
+			testRuns: 0,
+			successfulTests: 0,
+			failedTests: 0,
+			commits: 0,
+			recoveries: 0,
+			xpEarned: 8,
+			completed: true
+		});
+
+		const snapshot = buildAnalyticsSnapshot(storage, now);
+		assert.equal(snapshot.today.sessions, 1);
+		assert.equal(snapshot.today.xpEarned, 8);
+	});
+
+	test('excludes a session from yesterday in "today" stats', async () => {
+		const storage = new StorageService(createFakeContext());
+		const now = new Date(2026, 0, 15, 8, 0, 0).getTime();
+		await storage.appendSession({
+			id: 's1',
+			startedAt: new Date(2026, 0, 14, 23, 0, 0).getTime(),
+			endedAt: new Date(2026, 0, 14, 23, 30, 0).getTime(),
+			durationMinutes: 30,
+			filesTouched: 1,
+			buildAttempts: 0,
+			successfulBuilds: 0,
+			failedBuilds: 0,
+			testRuns: 0,
+			successfulTests: 0,
+			failedTests: 0,
+			commits: 0,
+			recoveries: 0,
+			xpEarned: 8,
+			completed: true
+		});
+
+		const snapshot = buildAnalyticsSnapshot(storage, now);
+		assert.equal(snapshot.today.sessions, 0);
 	});
 
 	test('includes a recent session in both weekly and monthly stats', async () => {
@@ -45,6 +97,7 @@ describe('buildAnalyticsSnapshot', () => {
 			successfulTests: 2,
 			failedTests: 0,
 			commits: 1,
+			recoveries: 0,
 			xpEarned: 15,
 			completed: true
 		});
@@ -73,6 +126,7 @@ describe('buildAnalyticsSnapshot', () => {
 			successfulTests: 0,
 			failedTests: 0,
 			commits: 0,
+			recoveries: 0,
 			xpEarned: 15,
 			completed: true
 		});

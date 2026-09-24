@@ -11,6 +11,8 @@ export interface CodingSession {
 	successfulTests: number;
 	failedTests: number;
 	commits: number;
+	/** A failed build or test immediately followed by a successful one of the same kind. */
+	recoveries: number;
 	xpEarned: number;
 	completed: boolean;
 }
@@ -26,6 +28,7 @@ export interface HistoricalAggregate {
 	totalSuccessfulTests: number;
 	totalFailedTests: number;
 	totalCommits: number;
+	totalRecoveries: number;
 	totalXpEarned: number;
 }
 
@@ -35,7 +38,7 @@ export interface SessionHistoryStorage {
 	historicalAggregate: HistoricalAggregate;
 }
 
-export const SESSION_HISTORY_VERSION = 1;
+export const SESSION_HISTORY_VERSION = 2;
 export const MAX_STORED_SESSIONS = 500;
 
 export function createEmptyAggregate(): HistoricalAggregate {
@@ -50,6 +53,7 @@ export function createEmptyAggregate(): HistoricalAggregate {
 		totalSuccessfulTests: 0,
 		totalFailedTests: 0,
 		totalCommits: 0,
+		totalRecoveries: 0,
 		totalXpEarned: 0
 	};
 }

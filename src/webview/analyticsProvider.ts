@@ -97,9 +97,9 @@ export class AnalyticsProvider {
 		}
 		.grid {
 			display: grid;
-			grid-template-columns: 1fr 1fr;
-			gap: 24px;
-			max-width: 720px;
+			grid-template-columns: 1fr 1fr 1fr;
+			gap: 20px;
+			max-width: 900px;
 			margin: 0 auto 24px;
 		}
 		.card {
@@ -136,7 +136,7 @@ export class AnalyticsProvider {
 			font-weight: 600;
 		}
 		.chart-card {
-			max-width: 720px;
+			max-width: 900px;
 			margin: 0 auto;
 		}
 		.chart {
@@ -171,6 +171,10 @@ export class AnalyticsProvider {
 </head>
 <body>
 	<div class="grid">
+		<div class="card">
+			<div class="card-title">Today</div>
+			${this.renderStatRows(snapshot.today, false)}
+		</div>
 		<div class="card">
 			<div class="card-title">This Week</div>
 			${this.renderStatRows(snapshot.weekly, false)}

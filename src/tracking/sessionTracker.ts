@@ -48,6 +48,16 @@ export class SessionTrackerService implements vscode.Disposable {
 		this.accumulator?.recordCommit();
 	}
 
+	/**
+	 * Counts from the currently in-progress session (not yet persisted — that
+	 * only happens when the session ends). Used so build/test/commit-based
+	 * achievements can unlock immediately rather than waiting for the session
+	 * to end.
+	 */
+	getInProgressCounts(): { successfulBuilds: number; successfulTests: number; commits: number; recoveries: number } {
+		return this.accumulator?.getInProgressCounts() ?? { successfulBuilds: 0, successfulTests: 0, commits: 0, recoveries: 0 };
+	}
+
 	private touchActivity(): void {
 		const now = Date.now();
 		if (!this.accumulator) {

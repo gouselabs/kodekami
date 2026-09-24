@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
-import { classifyTaskByName, TaskKind } from './taskClassifier';
-import { codeKamiEvents } from '../events/codeKamiEvents';
+import { classifyTaskByName, isSuccessfulExit, TaskKind } from './taskClassifier';
+import { reportTaskCompletion } from './reportTaskCompletion';
 import type { SessionTrackerService } from './sessionTracker';
 
 function classifyTask(task: vscode.Task): TaskKind {
@@ -20,8 +20,6 @@ export function registerBuildTestTracker(sessionTracker: SessionTrackerService):
 			return;
 		}
 
-		const success = event.exitCode === 0;
-		sessionTracker.recordBuildOrTest(kind, success);
-		codeKamiEvents.emit({ type: 'taskCompleted', kind, success });
+		reportTaskCompletion(sessionTracker, kind, isSuccessfulExit(event.exitCode));
 	});
 }

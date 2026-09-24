@@ -5,6 +5,10 @@ import { DailyActivity, PeriodStatistics } from './StatisticsTypes';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
+export function startOfLocalDay(date: Date): number {
+	return new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
+}
+
 function emptyPeriodStatistics(): PeriodStatistics {
 	return {
 		codingMinutes: 0,

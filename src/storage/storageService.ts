@@ -9,11 +9,18 @@ import {
 import { appendSession } from '../core/sessionHistory';
 import { CompanionStateStorage, COMPANION_STATE_VERSION, createDefaultCompanionState } from '../core/companionTypes';
 import { ThemeSelectionStorage, THEME_SELECTION_VERSION, createDefaultThemeSelection } from '../core/themeTypes';
+import { FocusStateStorage, FOCUS_STATE_VERSION, createDefaultFocusState } from '../core/focusTypes';
+import { QuestStateStorage, QUEST_STATE_VERSION, createDefaultQuestState } from '../core/questTypes';
+import { syncQuestsForToday } from '../core/questProgress';
+import { getLocalDateString } from '../core/streakSystem';
+import { CodeKamiExportEnvelope, EXPORT_FORMAT_VERSION } from '../core/exportFormat';
 
 const PROFILE_KEY = 'codekami.profile';
 const SESSION_HISTORY_KEY = 'codekami.sessions';
 const COMPANION_STATE_KEY = 'codekami.companionState';
 const THEME_SELECTION_KEY = 'codekami.themeSelection';
+const FOCUS_STATE_KEY = 'codekami.focusState';
+const QUEST_STATE_KEY = 'codekami.questState';
 
 export class StorageService {
 	constructor(private readonly context: vscode.ExtensionContext) {}
@@ -72,10 +79,22 @@ export class StorageService {
 	}
 
 	private migrateSessionHistory(history: SessionHistoryStorage): SessionHistoryStorage {
-		const migrated = history;
+		let migrated = history;
 
-		// No migrations yet — this is the first version. Future schema changes
-		// follow the same `if (migrated.version < N)` pattern as migrate() above.
+		if (!migrated.version || migrated.version < 2) {
+			// v1 -> v2: introduced recovery tracking (a failed build/test immediately
+			// followed by a successful one). Pre-v2 sessions predate the field, so
+			// they backfill to 0 — there's no way to reconstruct it retroactively.
+			migrated = {
+				...migrated,
+				sessions: migrated.sessions.map((session) => ({ ...session, recoveries: session.recoveries ?? 0 })),
+				historicalAggregate: {
+					...migrated.historicalAggregate,
+					totalRecoveries: migrated.historicalAggregate.totalRecoveries ?? 0
+				},
+				version: 2
+			};
+		}
 
 		return { ...createDefaultSessionHistory(), ...migrated, version: SESSION_HISTORY_VERSION };
 	}
@@ -126,5 +145,90 @@ export class StorageService {
 		// No migrations yet — this is the first version.
 
 		return { ...createDefaultThemeSelection(), ...migrated, version: THEME_SELECTION_VERSION };
+	}
+
+	getFocusState(): FocusStateStorage {
+		const stored = this.context.globalState.get<FocusStateStorage>(FOCUS_STATE_KEY);
+		if (!stored) {
+			return createDefaultFocusState();
+		}
+		return this.migrateFocusState(stored);
+	}
+
+	async saveFocusState(state: FocusStateStorage): Promise<void> {
+		await this.context.globalState.update(FOCUS_STATE_KEY, state);
+	}
+
+	async resetFocusState(): Promise<void> {
+		await this.context.globalState.update(FOCUS_STATE_KEY, undefined);
+	}
+
+	private migrateFocusState(state: FocusStateStorage): FocusStateStorage {
+		const migrated = state;
+
+		// No migrations yet — this is the first version.
+
+		return { ...createDefaultFocusState(), ...migrated, version: FOCUS_STATE_VERSION };
+	}
+
+	/**
+	 * Unlike the other getters, this also rolls the selection forward to today
+	 * if the stored state is from a previous day (or absent) — the same
+	 * read-time self-healing `migrate()` does for schema versions, applied to
+	 * "freshness" instead. A stale stored date is harmless: every read
+	 * recomputes the correct value, and it's corrected in storage the next
+	 * time a quest is completed.
+	 */
+	getQuestState(): QuestStateStorage {
+		const stored = this.context.globalState.get<QuestStateStorage>(QUEST_STATE_KEY);
+		const migrated = stored ? this.migrateQuestState(stored) : createDefaultQuestState();
+		return syncQuestsForToday(migrated, getLocalDateString()).state;
+	}
+
+	async saveQuestState(state: QuestStateStorage): Promise<void> {
+		await this.context.globalState.update(QUEST_STATE_KEY, state);
+	}
+
+	async resetQuestState(): Promise<void> {
+		await this.context.globalState.update(QUEST_STATE_KEY, undefined);
+	}
+
+	private migrateQuestState(state: QuestStateStorage): QuestStateStorage {
+		const migrated = state;
+
+		// No migrations yet — this is the first version.
+
+		return { ...createDefaultQuestState(), ...migrated, version: QUEST_STATE_VERSION };
+	}
+
+	exportAll(): CodeKamiExportEnvelope {
+		return {
+			exportVersion: EXPORT_FORMAT_VERSION,
+			exportedAt: new Date().toISOString(),
+			extensionVersion: String(this.context.extension.packageJSON.version ?? 'unknown'),
+			data: {
+				profile: this.getProfile(),
+				sessionHistory: this.getSessionHistory(),
+				companionState: this.getCompanionState(),
+				themeSelection: this.getThemeSelection(),
+				focusState: this.getFocusState(),
+				questState: this.getQuestState()
+			}
+		};
+	}
+
+	/**
+	 * Writes each domain through its own `saveX()` setter rather than touching
+	 * globalState directly, so the next `getX()` call runs that domain's
+	 * already-proven `migrate()` chain — an export from an older extension
+	 * version stays importable with no import-specific migration code.
+	 */
+	async importAll(envelope: CodeKamiExportEnvelope): Promise<void> {
+		await this.saveProfile(envelope.data.profile);
+		await this.saveSessionHistory(envelope.data.sessionHistory);
+		await this.saveCompanionState(envelope.data.companionState);
+		await this.saveThemeSelection(envelope.data.themeSelection);
+		await this.saveFocusState(envelope.data.focusState);
+		await this.saveQuestState(envelope.data.questState);
 	}
 }

@@ -18,6 +18,7 @@ export interface CodeKamiSettings {
 	soundVolume: number;
 	soundCooldownMs: number;
 	showDailyMotivation: boolean;
+	focusXpPerMinute: number;
 }
 
 export function getSettings(): CodeKamiSettings {
@@ -36,7 +37,8 @@ export function getSettings(): CodeKamiSettings {
 		showCompanion: config.get<boolean>('showCompanion', true),
 		enableSounds: config.get<boolean>('enableSounds', false),
 		soundVolume: config.get<number>('soundVolume', 70),
-		soundCooldownMs: config.get<number>('reactionCooldownSeconds', 45) * 1000,
-		showDailyMotivation: config.get<boolean>('showDailyMotivation', true)
+		soundCooldownMs: config.get<number>('soundCooldownSeconds', 15) * 1000,
+		showDailyMotivation: config.get<boolean>('showDailyMotivation', true),
+		focusXpPerMinute: config.get<number>('focusXpPerMinute', 3)
 	};
 }

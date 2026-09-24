@@ -2,7 +2,7 @@
   "name": "codekami",
   "displayName": "CodeKami",
   "description": "Turn your coding journey into an anime-inspired RPG. Offline, private, no backend.",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "publisher": "gouselabs",
   "icon": "icon.png",
   "repository": {
@@ -14,7 +14,7 @@
   },
   "homepage": "https://github.com/gouselabs/kodekami#readme",
   "engines": {
-    "vscode": "^1.85.0"
+    "vscode": "^1.93.0"
   },
   "categories": [
     "Other",
@@ -76,6 +76,66 @@
         "command": "codekami.changeTheme",
         "title": "Change Theme",
         "category": "CodeKami"
+      },
+      {
+        "command": "codekami.changeCompanion",
+        "title": "Change Companion",
+        "category": "CodeKami"
+      },
+      {
+        "command": "codekami.showSoundPanel",
+        "title": "Show Sound Panel",
+        "category": "CodeKami"
+      },
+      {
+        "command": "codekami.startFocusMode",
+        "title": "Start Focus Mode",
+        "category": "CodeKami"
+      },
+      {
+        "command": "codekami.startBossBattle",
+        "title": "Start Boss Battle",
+        "category": "CodeKami"
+      },
+      {
+        "command": "codekami.endFocus",
+        "title": "End Focus Session",
+        "category": "CodeKami"
+      },
+      {
+        "command": "codekami.showFocusPanel",
+        "title": "Show Focus Panel",
+        "category": "CodeKami"
+      },
+      {
+        "command": "codekami.completeQuest",
+        "title": "Complete Quest",
+        "category": "CodeKami"
+      },
+      {
+        "command": "codekami.exportProgress",
+        "title": "Export Progress",
+        "category": "CodeKami"
+      },
+      {
+        "command": "codekami.importProgress",
+        "title": "Import Progress",
+        "category": "CodeKami"
+      },
+      {
+        "command": "codekami.enableQuietMode",
+        "title": "Enable Quiet Mode",
+        "category": "CodeKami"
+      },
+      {
+        "command": "codekami.enableWorkMode",
+        "title": "Enable Work Mode",
+        "category": "CodeKami"
+      },
+      {
+        "command": "codekami.restoreNormalMode",
+        "title": "Restore Normal Mode",
+        "category": "CodeKami"
       }
     ],
     "themes": [
@@ -85,6 +145,24 @@
         "path": "./themes/codekami-dark-color-theme.json"
       }
     ],
+    "viewsContainers": {
+      "panel": [
+        {
+          "id": "codekami-panel",
+          "title": "CodeKami",
+          "icon": "media/panel-icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "codekami-panel": [
+        {
+          "type": "webview",
+          "id": "codekami.audioView",
+          "name": "Sound"
+        }
+      ]
+    },
     "configuration": {
       "title": "CodeKami",
       "properties": {
@@ -147,7 +225,7 @@
         "codekami.enableSounds": {
           "type": "boolean",
           "default": false,
-          "description": "Play short sound effects for level-ups, achievements, builds, tests, commits, sessions, and streak milestones. Off by default."
+          "description": "Play short sound effects for level-ups, achievements, builds, tests, commits, sessions, and streak milestones. Off by default. The first sound opens a 'CodeKami' panel at the bottom (next to Terminal) — click it once per VS Code session to allow audio (a one-time browser requirement); it stays enabled after that. You can also open it manually via 'CodeKami: Show Sound Panel'."
         },
         "codekami.soundVolume": {
           "type": "number",
@@ -156,10 +234,22 @@
           "maximum": 100,
           "description": "Sound effect volume, as a percentage."
         },
+        "codekami.soundCooldownSeconds": {
+          "type": "number",
+          "default": 15,
+          "minimum": 3,
+          "description": "Minimum seconds between non-critical sound effects (build/test/commit/session). Level-up and achievement sounds always bypass this. Lower it if you build/test frequently and want a sound every time; raise it if repeated sounds get annoying."
+        },
         "codekami.showDailyMotivation": {
           "type": "boolean",
           "default": true,
           "description": "Show a short, original daily motivational message on the dashboard. The same message shows all day, chosen deterministically — no server or randomness involved."
+        },
+        "codekami.focusXpPerMinute": {
+          "type": "number",
+          "default": 3,
+          "minimum": 0,
+          "description": "XP earned per minute spent in a Focus Mode or Boss Battle session. No XP is earned if a session is abandoned."
         },
         "codekami.debugMode": {
           "type": "boolean",
@@ -182,7 +272,7 @@
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
-    "@types/vscode": "^1.85.0",
+    "@types/vscode": "^1.93.0",
     "@typescript-eslint/eslint-plugin": "^7.0.0",
     "@typescript-eslint/parser": "^7.0.0",
     "@vscode/vsce": "^2.24.0",

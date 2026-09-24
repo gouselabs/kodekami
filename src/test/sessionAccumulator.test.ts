@@ -65,4 +65,73 @@ describe('SessionAccumulator', () => {
 		const session = new SessionAccumulator(0).finalize(1000);
 		assert.equal(session.completed, true);
 	});
+
+	test('getInProgressCounts reflects successes recorded so far, before the session ends', () => {
+		const acc = new SessionAccumulator(0);
+		acc.recordBuild(true);
+		acc.recordBuild(false);
+		acc.recordTest(true);
+		acc.recordCommit();
+		acc.recordCommit();
+
+		assert.deepEqual(acc.getInProgressCounts(), { successfulBuilds: 1, successfulTests: 1, commits: 2, recoveries: 0 });
+	});
+
+	test('getInProgressCounts starts at all zeros', () => {
+		const acc = new SessionAccumulator(0);
+		assert.deepEqual(acc.getInProgressCounts(), { successfulBuilds: 0, successfulTests: 0, commits: 0, recoveries: 0 });
+	});
+
+	test('counts a recovery when a failed build is immediately followed by a successful one', () => {
+		const acc = new SessionAccumulator(0);
+		acc.recordBuild(false);
+		acc.recordBuild(true);
+		const session = acc.finalize(60_000);
+		assert.equal(session.recoveries, 1);
+	});
+
+	test('counts a recovery when a failed test is immediately followed by a successful one', () => {
+		const acc = new SessionAccumulator(0);
+		acc.recordTest(false);
+		acc.recordTest(true);
+		const session = acc.finalize(60_000);
+		assert.equal(session.recoveries, 1);
+	});
+
+	test('does not count a recovery for consecutive successes', () => {
+		const acc = new SessionAccumulator(0);
+		acc.recordBuild(true);
+		acc.recordBuild(true);
+		const session = acc.finalize(60_000);
+		assert.equal(session.recoveries, 0);
+	});
+
+	test('does not double-count a recovery across repeated successes after one failure', () => {
+		const acc = new SessionAccumulator(0);
+		acc.recordBuild(false);
+		acc.recordBuild(true);
+		acc.recordBuild(true);
+		const session = acc.finalize(60_000);
+		assert.equal(session.recoveries, 1, 'only the failure->success transition counts, not every success after it');
+	});
+
+	test('build and test recoveries are tracked independently and both add to the same counter', () => {
+		const acc = new SessionAccumulator(0);
+		acc.recordBuild(false);
+		acc.recordTest(false);
+		acc.recordBuild(true);
+		acc.recordTest(true);
+		const session = acc.finalize(60_000);
+		assert.equal(session.recoveries, 2);
+	});
+
+	test('a fresh failure after a recovery can be counted again', () => {
+		const acc = new SessionAccumulator(0);
+		acc.recordBuild(false);
+		acc.recordBuild(true);
+		acc.recordBuild(false);
+		acc.recordBuild(true);
+		const session = acc.finalize(60_000);
+		assert.equal(session.recoveries, 2);
+	});
 });

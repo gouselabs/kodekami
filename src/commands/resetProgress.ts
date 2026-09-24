@@ -20,5 +20,7 @@ export async function resetProgress(storage: StorageService): Promise<boolean> {
 	await storage.resetSessionHistory();
 	await storage.resetCompanionState();
 	await storage.resetThemeSelection();
+	await storage.resetFocusState();
+	await storage.resetQuestState();
 	return true;
 }

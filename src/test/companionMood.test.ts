@@ -18,6 +18,7 @@ function makeSession(overrides: Partial<CodingSession> = {}): CodingSession {
 		successfulTests: 0,
 		failedTests: 0,
 		commits: 0,
+		recoveries: 0,
 		xpEarned: 0,
 		completed: true,
 		...overrides
@@ -94,8 +95,29 @@ describe('deriveMoodFromEvent', () => {
 		assert.equal(deriveMoodFromEvent({ type: 'sessionStarted', isReturn: false }), undefined);
 	});
 
-	test('unrelated events map to no mood', () => {
-		assert.equal(deriveMoodFromEvent({ type: 'streakMilestone', milestone: 7 }), undefined);
-		assert.equal(deriveMoodFromEvent({ type: 'commit' }), undefined);
+	test('a streak milestone maps to achievement mood', () => {
+		assert.equal(deriveMoodFromEvent({ type: 'streakMilestone', milestone: 7 }), 'achievement');
+	});
+
+	test('a commit maps to coding mood', () => {
+		assert.equal(deriveMoodFromEvent({ type: 'commit' }), 'coding');
+	});
+
+	test('xpGranted maps to no mood', () => {
+		assert.equal(deriveMoodFromEvent({ type: 'xpGranted', result: { leveledUpTo: [] }, context: {} }), undefined);
+	});
+
+	test('focusStarted maps to focusMode', () => {
+		assert.equal(deriveMoodFromEvent({ type: 'focusStarted', targetDurationMinutes: 25 }), 'focusMode');
+	});
+
+	test('focusCompleted maps to achievement', () => {
+		const session = { startedAt: 0, endedAt: 1, targetDurationMinutes: 25, elapsedMinutes: 25, outcome: 'completed' as const, xpEarned: 75 };
+		assert.equal(deriveMoodFromEvent({ type: 'focusCompleted', session }), 'achievement');
+	});
+
+	test('focusCancelled maps to no mood', () => {
+		const session = { startedAt: 0, endedAt: 1, targetDurationMinutes: 25, elapsedMinutes: 5, outcome: 'cancelled' as const, xpEarned: 0 };
+		assert.equal(deriveMoodFromEvent({ type: 'focusCancelled', session }), undefined);
 	});
 });
