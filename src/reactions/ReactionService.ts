@@ -1,7 +1,6 @@
 import * as vscode from 'vscode';
 import { codeKamiEvents, CodeKamiEvent } from '../events/codeKamiEvents';
 import { pickReaction } from './ReactionEngine';
-import { ReactionCooldown } from './ReactionCooldown';
 import { AnimeReaction, ReactionEventType } from './reactions';
 import { getSettings, CodeKamiSettings } from '../utils/settings';
 import { LONG_SESSION_MINUTES } from '../core/config';
@@ -9,7 +8,6 @@ import { LONG_SESSION_MINUTES } from '../core/config';
 const STATUS_BAR_DISPLAY_MS = 4000;
 
 export class ReactionService implements vscode.Disposable {
-	private readonly cooldown = new ReactionCooldown();
 	private readonly statusBarItem: vscode.StatusBarItem;
 	private readonly subscription: vscode.Disposable;
 	private hideTimeout: ReturnType<typeof setTimeout> | undefined;
@@ -27,7 +25,6 @@ export class ReactionService implements vscode.Disposable {
 
 		switch (event.type) {
 			case 'levelUp':
-				// Level-up and achievement reactions always bypass the cooldown.
 				this.present(pickReaction('levelUp'), settings);
 				return;
 			case 'achievementUnlocked':
@@ -45,38 +42,25 @@ export class ReactionService implements vscode.Disposable {
 						: event.success
 							? 'testSuccess'
 							: 'testFailure';
-				this.presentWithCooldown(reactionEvent, settings);
+				this.present(pickReaction(reactionEvent), settings);
 				return;
 			}
 			case 'commit':
-				this.presentWithCooldown('commit', settings);
+				this.present(pickReaction('commit'), settings);
 				return;
 			case 'sessionEnded':
 				if (event.session.durationMinutes >= LONG_SESSION_MINUTES) {
-					this.presentWithCooldown('longSession', settings);
+					this.present(pickReaction('longSession'), settings);
 				}
 				return;
 			case 'sessionStarted':
 				if (event.isReturn) {
-					this.presentWithCooldown('returnAfterInactivity', settings);
+					this.present(pickReaction('returnAfterInactivity'), settings);
 				}
 				return;
 			default:
 				return;
 		}
-	}
-
-	private presentWithCooldown(reactionEvent: ReactionEventType, settings: CodeKamiSettings): void {
-		const now = Date.now();
-		if (!this.cooldown.canShow(now, settings.reactionCooldownMs)) {
-			return;
-		}
-		const reaction = pickReaction(reactionEvent);
-		if (!reaction) {
-			return;
-		}
-		this.cooldown.markShown(now);
-		this.present(reaction, settings);
 	}
 
 	private present(reaction: AnimeReaction | undefined, settings: CodeKamiSettings): void {

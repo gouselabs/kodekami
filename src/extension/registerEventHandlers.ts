@@ -5,10 +5,16 @@ import { buildAchievementContext } from '../core/achievementContextBuilder';
 import { getSettings } from '../utils/settings';
 
 export function registerEventHandlers(context: vscode.ExtensionContext, container: ServiceContainer): void {
-	const { storage, sessionTracker, sessionSummary, refreshAll, syncAchievements } = container;
+	const { storage, sessionTracker, sessionSummary, refreshAll, notify, syncAchievements } = container;
 
 	context.subscriptions.push(
 		codeKamiEvents.onEvent((event) => {
+			if (event.type === 'sessionStarted') {
+				const cardName = storage.getProfile().cardName;
+				notify(cardName ? `⚔️ Welcome back, ${cardName}! Let's begin the battle!` : "⚔️ Welcome back! Let's begin the battle!");
+				return;
+			}
+
 			if (event.type === 'taskCompleted' || event.type === 'commit') {
 				void syncAchievements(buildAchievementContext(sessionTracker));
 				return;

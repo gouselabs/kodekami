@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [0.2.0] - 2026-09-30
 
 ### Added
 
@@ -10,12 +10,22 @@
 - **Boss Battle** — the same focus timer with a boss to defeat: pick from 5 original bosses (Bug Hydra, Scope Creep Golem, Merge Conflict Wraith, Deadline Dragon, Null Pointer Specter), watch its HP bar drain as you stay focused, and defeat it when the timer completes. Ending a session early via `CodeKami: End Focus Session` still grants XP for the time actually spent ("Finish now") or ends it with none ("Abandon"). New command: `CodeKami: Start Boss Battle`.
 - **Daily Quests** — 3 quests picked deterministically each day (same for the whole day, no server or randomness), shown on the dashboard. 5 are detected automatically (commit, clean build, passing tests, 30 minutes coding, finishing a Focus/Boss session); 2 are marked complete by hand via the new `CodeKami: Complete Quest` command (refactoring, removing unused imports — there's no reliable signal for these) and are clearly labeled as manual on the dashboard.
 - **Export / Import Progress** — since everything is stored locally with no backend, there was previously no backup path at all. New commands `CodeKami: Export Progress` (saves a JSON file via a normal Save dialog) and `CodeKami: Import Progress` (overwrites current progress after a confirmation, same as Reset). An export from any past version stays importable — it's written through the same versioned migration path normal storage reads already use, so nothing needs to be re-migrated by hand later.
-- **Quiet Mode / Work Mode** — new commands to quickly silence interruptions for meetings or screen-sharing. `CodeKami: Enable Quiet Mode` turns off notifications, reactions, sounds, and session summaries. `CodeKami: Enable Work Mode` does the same and also hides the companion and daily motivation for a more minimal status bar. `CodeKami: Restore Normal Mode` resets all of these back to their defaults. XP and progress keep tracking normally in either mode — only the interruptions are affected.
+- **Quiet Mode / Work Mode** — new commands to quickly silence interruptions for meetings or screen-sharing. `CodeKami: Enable Quiet Mode` turns off notifications, reactions, and session summaries. `CodeKami: Enable Work Mode` does the same and also hides the companion and daily motivation for a more minimal status bar. `CodeKami: Restore Normal Mode` resets all of these back to their defaults. XP and progress keep tracking normally in either mode — only the interruptions are affected.
 - `RELEASE_CHECKLIST.md` — a scripted manual QA pass covering the timing and lifecycle behavior automated tests can't reach (races, day rollovers, panel/status-bar lifecycle), run before every package/publish.
+- A welcome message when a coding session starts — greets you by your Developer Card name if you've set one ("⚔️ Welcome back, `<name>`! Let's begin the battle!"), or a generic version if you haven't.
 
 ### Changed
 
-- Internal: `extension.ts`'s activation logic (previously a single ~270-line function) is now split into `src/extension/serviceContainer.ts`, `registerCommands.ts`, and `registerEventHandlers.ts`. No behavior change — this is purely a structural cleanup now that the command surface has grown to 24 commands across 8 feature areas.
+- Internal: `extension.ts`'s activation logic (previously a single ~270-line function) is now split into `src/extension/serviceContainer.ts`, `registerCommands.ts`, and `registerEventHandlers.ts`. No behavior change — this is purely a structural cleanup now that the command surface has grown to 20 commands across 8 feature areas.
+- **Anime reactions now always fire — the cooldown is gone.** Every level-up, achievement, build, test, commit, and long session gets its own reaction every time, matching how level-up/achievement reactions already worked. Previously all of these shared one cooldown (default 45s), so a second build failure within that window silently showed nothing — the `codekami.reactionCooldownSeconds` setting is removed along with it.
+
+### Fixed
+
+- **Git commit detection no longer fires on `git pull`.** It previously reacted to any change in the repository's HEAD commit, which also happens on a pull, merge, rebase, or checkout — not just an actual local commit. It now also requires that whatever was staged/dirty just before the HEAD change is gone afterward, which is what actually distinguishes a real commit from HEAD simply moving.
+
+### Removed
+
+- **Sound effects**, entirely — the feature, its settings (`codekami.enableSounds`, `codekami.soundVolume`, `codekami.soundCooldownSeconds`), the `CodeKami: Show Sound Panel` command, the bundled `.wav` files, and the bottom panel it lived in. It depended on a one-time browser-style click to unlock audio in a webview, which kept breaking in practice; removing it means one less thing standing between an event happening and CodeKami reacting to it.
 
 ## [0.1.1] - 2026-09-23
 

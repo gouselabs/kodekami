@@ -3,13 +3,12 @@ import * as vscode from 'vscode';
 interface ModeSettings {
 	enableNotifications: boolean;
 	showReactions: boolean;
-	enableSounds: boolean;
 	showSessionSummary: boolean;
 	showDailyMotivation: boolean;
 	showCompanion: boolean;
 }
 
-// Quiet Mode silences interruptions (notifications, reactions, sounds, session
+// Quiet Mode silences interruptions (notifications, reactions, session
 // summaries) for things like meetings or screen-sharing, but keeps the
 // dashboard's personality touches. Work Mode goes further and also drops
 // those flavor touches for a more minimal status bar — both only ever
@@ -18,7 +17,6 @@ interface ModeSettings {
 const QUIET_MODE_SETTINGS: ModeSettings = {
 	enableNotifications: false,
 	showReactions: false,
-	enableSounds: false,
 	showSessionSummary: false,
 	showDailyMotivation: true,
 	showCompanion: true
@@ -27,7 +25,6 @@ const QUIET_MODE_SETTINGS: ModeSettings = {
 const WORK_MODE_SETTINGS: ModeSettings = {
 	enableNotifications: false,
 	showReactions: false,
-	enableSounds: false,
 	showSessionSummary: false,
 	showDailyMotivation: false,
 	showCompanion: false
@@ -36,7 +33,6 @@ const WORK_MODE_SETTINGS: ModeSettings = {
 const NORMAL_MODE_SETTINGS: ModeSettings = {
 	enableNotifications: true,
 	showReactions: true,
-	enableSounds: false,
 	showSessionSummary: true,
 	showDailyMotivation: true,
 	showCompanion: true
@@ -54,7 +50,7 @@ async function applyModeSettings(settings: ModeSettings): Promise<void> {
 export async function enableQuietMode(): Promise<void> {
 	await applyModeSettings(QUIET_MODE_SETTINGS);
 	void vscode.window.showInformationMessage(
-		'🔇 Quiet Mode enabled — notifications, reactions, sounds, and session summaries are off. XP and progress still track normally.'
+		'🔇 Quiet Mode enabled — notifications, reactions, and session summaries are off. XP and progress still track normally.'
 	);
 }
 

@@ -7,7 +7,6 @@ import { resetProgress } from '../commands/resetProgress';
 import { buildAnalyticsSnapshot } from '../analytics/AnalyticsService';
 import { promptThemeSelection } from '../commands/changeTheme';
 import { promptCompanionSelection } from '../commands/changeCompanion';
-import { AUDIO_VIEW_ID } from '../audio/AudioService';
 import { promptStartFocusMode } from '../commands/startFocusMode';
 import { promptStartBossBattle } from '../commands/startBossBattle';
 import { promptEndFocus } from '../commands/endFocus';
@@ -76,9 +75,6 @@ export function registerCommands(context: vscode.ExtensionContext, container: Se
 			if (changed) {
 				refreshAll();
 			}
-		}),
-		vscode.commands.registerCommand('codekami.showSoundPanel', () => {
-			void vscode.commands.executeCommand(`${AUDIO_VIEW_ID}.focus`);
 		}),
 		vscode.commands.registerCommand('codekami.startFocusMode', () => promptStartFocusMode(focusService)),
 		vscode.commands.registerCommand('codekami.startBossBattle', () => promptStartBossBattle(focusService)),

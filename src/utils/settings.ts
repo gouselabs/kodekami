@@ -10,13 +10,9 @@ export interface CodeKamiSettings {
 	debugMode: boolean;
 	showReactions: boolean;
 	reactionMode: ReactionMode;
-	reactionCooldownMs: number;
 	sessionInactivityMs: number;
 	showSessionSummary: boolean;
 	showCompanion: boolean;
-	enableSounds: boolean;
-	soundVolume: number;
-	soundCooldownMs: number;
 	showDailyMotivation: boolean;
 	focusXpPerMinute: number;
 }
@@ -31,13 +27,9 @@ export function getSettings(): CodeKamiSettings {
 		debugMode: config.get<boolean>('debugMode', false),
 		showReactions: config.get<boolean>('showReactions', true),
 		reactionMode: config.get<ReactionMode>('reactionMode', 'both'),
-		reactionCooldownMs: config.get<number>('reactionCooldownSeconds', 45) * 1000,
 		sessionInactivityMs: config.get<number>('sessionInactivityMinutes', 30) * 60_000,
 		showSessionSummary: config.get<boolean>('showSessionSummary', true),
 		showCompanion: config.get<boolean>('showCompanion', true),
-		enableSounds: config.get<boolean>('enableSounds', false),
-		soundVolume: config.get<number>('soundVolume', 70),
-		soundCooldownMs: config.get<number>('soundCooldownSeconds', 15) * 1000,
 		showDailyMotivation: config.get<boolean>('showDailyMotivation', true),
 		focusXpPerMinute: config.get<number>('focusXpPerMinute', 3)
 	};

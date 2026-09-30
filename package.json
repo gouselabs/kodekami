@@ -2,7 +2,7 @@
   "name": "codekami",
   "displayName": "CodeKami",
   "description": "Turn your coding journey into an anime-inspired RPG. Offline, private, no backend.",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "publisher": "gouselabs",
   "icon": "icon.png",
   "repository": {
@@ -83,11 +83,6 @@
         "category": "CodeKami"
       },
       {
-        "command": "codekami.showSoundPanel",
-        "title": "Show Sound Panel",
-        "category": "CodeKami"
-      },
-      {
         "command": "codekami.startFocusMode",
         "title": "Start Focus Mode",
         "category": "CodeKami"
@@ -145,24 +140,6 @@
         "path": "./themes/codekami-dark-color-theme.json"
       }
     ],
-    "viewsContainers": {
-      "panel": [
-        {
-          "id": "codekami-panel",
-          "title": "CodeKami",
-          "icon": "media/panel-icon.svg"
-        }
-      ]
-    },
-    "views": {
-      "codekami-panel": [
-        {
-          "type": "webview",
-          "id": "codekami.audioView",
-          "name": "Sound"
-        }
-      ]
-    },
     "configuration": {
       "title": "CodeKami",
       "properties": {
@@ -192,19 +169,13 @@
         "codekami.showReactions": {
           "type": "boolean",
           "default": true,
-          "description": "Show short anime-style reactions when you level up or unlock an achievement."
+          "description": "Show a short anime-style reaction every time you level up, unlock an achievement, build, test, commit, or finish a long session. Every qualifying event always reacts — there is no cooldown."
         },
         "codekami.reactionMode": {
           "type": "string",
           "enum": ["notification", "statusBar", "both"],
           "default": "both",
           "description": "How reactions are shown: a notification popup, a transient status bar message, or both."
-        },
-        "codekami.reactionCooldownSeconds": {
-          "type": "number",
-          "default": 45,
-          "minimum": 10,
-          "description": "Minimum seconds between normal reactions. Level-up and achievement reactions always bypass this cooldown."
         },
         "codekami.sessionInactivityMinutes": {
           "type": "number",
@@ -221,24 +192,6 @@
           "type": "boolean",
           "default": true,
           "description": "Show your CodeKami companion in the status bar. It reacts to level-ups, achievements, builds, tests, commits, and long sessions."
-        },
-        "codekami.enableSounds": {
-          "type": "boolean",
-          "default": false,
-          "description": "Play short sound effects for level-ups, achievements, builds, tests, commits, sessions, and streak milestones. Off by default. The first sound opens a 'CodeKami' panel at the bottom (next to Terminal) — click it once per VS Code session to allow audio (a one-time browser requirement); it stays enabled after that. You can also open it manually via 'CodeKami: Show Sound Panel'."
-        },
-        "codekami.soundVolume": {
-          "type": "number",
-          "default": 70,
-          "minimum": 0,
-          "maximum": 100,
-          "description": "Sound effect volume, as a percentage."
-        },
-        "codekami.soundCooldownSeconds": {
-          "type": "number",
-          "default": 15,
-          "minimum": 3,
-          "description": "Minimum seconds between non-critical sound effects (build/test/commit/session). Level-up and achievement sounds always bypass this. Lower it if you build/test frequently and want a sound every time; raise it if repeated sounds get annoying."
         },
         "codekami.showDailyMotivation": {
           "type": "boolean",

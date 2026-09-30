@@ -2,11 +2,14 @@ import * as vscode from 'vscode';
 import { codeKamiEvents } from '../events/codeKamiEvents';
 import { log } from '../utils/logger';
 import type { SessionTrackerService } from './sessionTracker';
+import { isLikelyCommit } from './gitCommitHeuristic';
 
 // The built-in git extension does not ship official @types/vscode declarations.
 // This is a minimal, locally-defined surface covering only what's used here.
 interface GitRepositoryState {
 	readonly HEAD: { readonly commit?: string } | undefined;
+	readonly indexChanges: ReadonlyArray<unknown>;
+	readonly workingTreeChanges: ReadonlyArray<unknown>;
 	readonly onDidChange: vscode.Event<void>;
 }
 interface GitRepository {
@@ -22,6 +25,10 @@ interface GitExtensionExports {
 
 const noopDisposable: vscode.Disposable = { dispose: () => undefined };
 
+function hasPendingChanges(repository: GitRepository): boolean {
+	return repository.state.indexChanges.length > 0 || repository.state.workingTreeChanges.length > 0;
+}
+
 export function registerGitTracker(sessionTracker: SessionTrackerService): vscode.Disposable {
 	try {
 		const gitExtension = vscode.extensions.getExtension<GitExtensionExports>('vscode.git');
@@ -33,14 +40,20 @@ export function registerGitTracker(sessionTracker: SessionTrackerService): vscod
 		const disposables: vscode.Disposable[] = [];
 		const watchRepository = (repository: GitRepository) => {
 			let lastCommit = repository.state.HEAD?.commit;
+			let hadPendingChanges = hasPendingChanges(repository);
 			disposables.push(
 				repository.state.onDidChange(() => {
 					const currentCommit = repository.state.HEAD?.commit;
-					if (currentCommit && currentCommit !== lastCommit) {
-						lastCommit = currentCommit;
+					const commitChanged = currentCommit !== undefined && currentCommit !== lastCommit;
+					const nowHasPendingChanges = hasPendingChanges(repository);
+
+					if (isLikelyCommit({ commitChanged, hadPendingChanges, nowHasPendingChanges })) {
 						sessionTracker.recordCommit();
 						codeKamiEvents.emit({ type: 'commit' });
 					}
+
+					lastCommit = currentCommit;
+					hadPendingChanges = nowHasPendingChanges;
 				})
 			);
 		};

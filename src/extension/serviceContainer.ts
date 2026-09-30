@@ -7,7 +7,6 @@ import { AnalyticsProvider } from '../webview/analyticsProvider';
 import { StatusBarService } from '../utils/statusBarService';
 import { ReactionService } from '../reactions/ReactionService';
 import { CompanionService } from '../companion/CompanionService';
-import { AudioService, AUDIO_VIEW_ID } from '../audio/AudioService';
 import { SessionTrackerService } from '../tracking/sessionTracker';
 import { registerBuildTestTracker } from '../tracking/buildTestTracker';
 import { registerTerminalCommandTracker } from '../tracking/terminalCommandTracker';
@@ -55,17 +54,12 @@ export function createServiceContainer(context: vscode.ExtensionContext): Servic
 	const statusBar = new StatusBarService();
 	const reactionService = new ReactionService();
 	const companionService = new CompanionService(storage);
-	const audioService = new AudioService(context.extensionUri);
 	const sessionTracker = new SessionTrackerService(storage);
 
 	context.subscriptions.push(
 		statusBar,
 		reactionService,
 		companionService,
-		audioService,
-		vscode.window.registerWebviewViewProvider(AUDIO_VIEW_ID, audioService, {
-			webviewOptions: { retainContextWhenHidden: true }
-		}),
 		codeKamiEvents,
 		sessionTracker,
 		registerBuildTestTracker(sessionTracker),
